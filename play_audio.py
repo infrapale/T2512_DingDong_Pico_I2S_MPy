@@ -3,7 +3,7 @@ import machine
 from machine import SPI, I2S, Pin
 import sdcard
 import os
-from io import IO
+import io
 
 #https://github.com/micropython/micropython
 #https://randomnerdtutorials.com/raspberry-pi-pico-microsd-card-micropython/

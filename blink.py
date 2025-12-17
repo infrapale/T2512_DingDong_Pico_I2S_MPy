@@ -4,14 +4,17 @@ from machine import UART
 from machine import I2S
 from machine import Timer  # Ensure Timer is imported correctly
 import ustruct
-from io import BoardDef
+import board_def 
+
+
 
 
 # https://github.com/raspberrypi/pico-micropython-examples
 
-pin = Pin("LED", Pin.OUT)
-led_yellow = Pin(7, Pin.OUT)
-led_red = Pin(6, Pin.OUT)
+
+
+led_yellow = Pin(board_def.LED_YELLOW, Pin.OUT)
+led_red = Pin(board_def.LED_RED, Pin.OUT)
 
 led_red.off()
 led_yellow.off()
@@ -66,7 +69,7 @@ BUFFER_SIZE = 2048     # Bytes per buffer
 def play_tone(frequency, duration_ms, volume=32767):
     """Play a tone using I2S interface"""
     
-    sample_rate = 44100
+    sample_rate = 16000  #44100
     samples = int(sample_rate * duration_ms / 1000)
     
     audio = I2S(1, sck=Pin(SCK_PIN), ws=Pin(WS_PIN), sd=Pin(SD_PIN), mode=I2S.TX, bits=16, format=I2S.STEREO, rate=sample_rate, ibuf=20000)
@@ -109,14 +112,14 @@ while True:
             print(data)
             decode_alarm_messages(data) 
     try:
-        pin.toggle()
+        #pin.toggle()
         # led_yellow.toggle()
         # led_red.toggle()
         sleep(1) # sleep 1sec
     except KeyboardInterrupt:
         break
 
-pin.off()
+
 tim.deinit()
 print("Finished.")
 
