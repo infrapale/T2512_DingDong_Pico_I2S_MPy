@@ -3,11 +3,28 @@ from utime import sleep
 from machine import UART
 from machine import I2S
 from machine import Timer  # Ensure Timer is imported correctly
+import sdcard
+import sys
+import os
 import ustruct
 import board_def as BD
+from lib.dingdong import DingDong
+from mysd import MySD
+
+sd = MySD(BD.SD_CLK, BD.SD_MOSI, BD.SD_MISO, BD.SD_CS)
+sd.mount()  
+sd.print_directory()
+
+# sys.exit()
 
 
-
+ding_dong = DingDong(sd,
+                     pin_sck=BD.I2S_SCK,        # Serial Clock  
+                     pin_ws=BD.I2S_WS,          # Word Select (LRCLK)
+                     pin_sd =BD.I2S_SD,          # Serial Data
+                     i2s_id=0,
+                     rate=16000,
+                     buffer_frames=2048)        # Bytes per buffer
 
 # https://github.com/raspberrypi/pico-micropython-examples
 
@@ -57,33 +74,7 @@ tim = Timer()  # Timer ID (0, 1, etc. depends on board)
 tim.init(period=100, mode=Timer.PERIODIC, callback=led_task)
 
 
-# ==== USER CONFIGURATION ====
-WAV_FILE = "test.wav"  # Must be 16-bit PCM WAV
-SCK_PIN = BD.I2S_SCK    # Serial Clock
-WS_PIN = BD.I2S_WS      # Word Select (LRCLK)
-SD_PIN = BD.I2S_SD      # Serial Data
-BUFFER_SIZE = 2048          # Bytes per buffer
-# ============================
 
-
-def play_tone(frequency, duration_ms, volume=32767):
-    """Play a tone using I2S interface"""
-    
-    sample_rate = 16000  #44100
-    samples = int(sample_rate * duration_ms / 1000)
-    
-    audio = I2S(1, sck=Pin(SCK_PIN), ws=Pin(WS_PIN), sd=Pin(SD_PIN), mode=I2S.TX, bits=16, format=I2S.STEREO, rate=sample_rate, ibuf=20000)
-    buf = bytearray(samples * 4)
-    for i in range(samples):
-        sample = int(volume * __import__('math').sin(2 * __import__('math').pi * frequency * i / sample_rate))
-
-        buf[i*4:i*4+2] = sample.to_bytes(2, 'little')
-        buf[i*4+2:i*4+4] = sample.to_bytes(2, 'little')   
-    audio.write(buf)
-    audio.deinit()
-    """
-    """
-    print("play tone done")
 
 def decode_alarm_messages(data):
     # Placeholder for decoding logic
@@ -95,14 +86,15 @@ def decode_alarm_messages(data):
         alarm_data['Label'] = data[3]   
         alarm_data['Duration'] = alarm_severity_duration.get(alarm_data['Severity'], 0) 
         led_states['yellow']['timeout'] =10
-        play_tone(440, 100, 20000)
+        if alarm_data['Severity'] > 0:  
+            ding_dong.play('/sd/truck_horn.wav')
     else:
         led_states['red']['timeout'] = 20
     print(alarm_data)
 
 
 
-play_tone(220, 100)
+ding_dong.play('/sd/chime_big_ben_2b.wav')
 
 while True:
     if uart.any():
